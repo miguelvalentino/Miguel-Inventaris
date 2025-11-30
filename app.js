@@ -102,11 +102,26 @@ app.delete('/api/items/:id', async (req, res) => {
     }
 });
 
+app.get('/api/items/in', async (req, res) => {
+    try {
+        const history = await db.any(`
+            SELECT bm.id_entry, bi.name_item, bm.date_entry, bm.total_entry, bm.info_entry 
+            FROM barang_masuk bm
+            LEFT JOIN barang_inventaris bi ON bm.id_item = bi.id_item
+            ORDER BY bm.id_entry DESC
+        `);
+        res.json(history);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
 app.post('/api/items/in', async (req, res) => {
-    const { id_item, total_entry } = req.body;
+    const { id_item, total_entry, info_entry } = req.body;
     try {
         await db.tx(async t => {
-            await t.none("INSERT INTO barang_masuk(id_item, total_entry) VALUES($1, $2)", [id_item, total_entry]);
+            await t.none("INSERT INTO barang_masuk(id_item, total_entry, date_entry, info_entry) VALUES($1, $2, CURRENT_DATE, $3)", [id_item, total_entry, info_entry]);
             await t.none("UPDATE barang_inventaris SET total_item = total_item + $1 WHERE id_item = $2", [total_entry, id_item]);
         });
         res.json({ status: 'success' });
@@ -115,19 +130,41 @@ app.post('/api/items/in', async (req, res) => {
     }
 });
 
+app.get('/api/items/out', async (req, res) => {
+    try {
+        const history = await db.any(`
+            SELECT bk.id_exit, bi.name_item, bk.date_exit, bk.total_exit, bk.info_exit 
+            FROM barang_keluar bk
+            LEFT JOIN barang_inventaris bi ON bk.id_item = bi.id_item
+            ORDER BY bk.id_exit DESC
+        `);
+        res.json(history);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
 app.post('/api/items/out', async (req, res) => {
-    const { id_item, total_exit } = req.body;
+    const { id_item, total_exit, info_exit } = req.body;
+    
     try {
         await db.tx(async t => {
             const item = await t.one("SELECT total_item FROM barang_inventaris WHERE id_item = $1", [id_item]);
-            if (item.total_item < total_exit) throw new Error("Stok kurang!");
+
+            if (item.total_item < total_exit) {
+                throw new Error(`Stok tidak cukup! Sisa stok: ${item.total_item}`);
+            }
             
-            await t.none("INSERT INTO barang_keluar(id_item, total_exit) VALUES($1, $2)", [id_item, total_exit]);
-            await t.none("UPDATE barang_inventaris SET total_item = total_item - $1 WHERE id_item = $2", [total_exit, id_item]);
+            await t.none("INSERT INTO barang_keluar(id_item, total_exit, date_exit, info_exit) VALUES($1, $2, CURRENT_DATE, $3)", 
+                [id_item, total_exit, info_exit]);
+            
+            await t.none("UPDATE barang_inventaris SET total_item = total_item - $1 WHERE id_item = $2", 
+                [total_exit, id_item]);
         });
         res.json({ status: 'success' });
-    } catch (err) {
-        res.status(400).json({ error: err.message });
+    } catch (err) { 
+        res.status(400).json({ error: err.message }); 
     }
 });
 

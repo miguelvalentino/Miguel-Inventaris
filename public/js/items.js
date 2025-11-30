@@ -11,10 +11,13 @@ async function loadData() {
         data.forEach((item, index) => {
             rows += `
                 <tr>
-                    <td>${index + 1}</td> <td>${item.name_item}</td>
+                    <td>${index + 1}</td>
+                    <td>${item.name_item}</td>
                     <td>${item.type_item || '-'}</td>
                     <td>${item.brand_item || '-'}</td>
-                    <td><strong>${item.total_item}</strong></td> <td>${item.info_item || '-'}</td> <td>
+                    <td>${item.total_item}</td>
+                    <td>${item.info_item || '-'}</td> 
+                    <td>
                         <button class="btn btn-sm btn-warning" 
                             onclick="bukaEdit(${item.id_item}, '${item.name_item}', '${item.type_item}', '${item.brand_item}', '${item.info_item}')">
                             Edit
