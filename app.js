@@ -5,19 +5,17 @@ require("dotenv").config();
 
 const db = require("./database");
 
-// agar server bisa membaca form dan JSON
+// Middleware parsing body
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
-// file static sbadmin
-app.use(express.static(path.join(__dirname, 'startbootstrap-sb-admin-gh-pages')));
+app.use(express.static(path.join(__dirname, 'public')));
 
-// tampilkan login page
 app.get('/login', (req, res) => {
-    res.sendFile(path.join(__dirname, 'startbootstrap-sb-admin-gh-pages', 'login.html'));
+    res.sendFile(path.join(__dirname, 'public', 'login.html'));
 });
 
-// proses login
+// Proses Login
 app.post('/login', async (req, res) => {
     const { user_name, password } = req.body;
 
@@ -26,18 +24,18 @@ app.post('/login', async (req, res) => {
             "SELECT * FROM users WHERE user_name = $1 AND password = $2",
             [user_name, password]
         );
-
-        if (result.rows.length > 0) {
-            res.send("login berhasil");
+        if (result.length > 0) {
+            console.log("Login Berhasil!");
+            res.redirect('/index.html');
         } else {
-            res.send("login gagal");
+            console.log("Login Gagal: Data tidak cocok");
+            res.send("Login gagal: Username atau password salah.");
         }
 
     } catch (err) {
-        console.error(err);
+        console.error("Database Error:", err);
         res.send("Terjadi error di server.");
     }
 });
 
-// jalankan server
 app.listen(3000, () => console.log("Server berjalan di http://localhost:3000/login"));
