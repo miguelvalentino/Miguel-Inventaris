@@ -18,5 +18,8 @@
     "express-session": "^1.18.2",
     "pg": "^8.16.3",
     "pg-promise": "^12.3.0"
+  },
+  "devDependencies": {
+    "prettier": "3.7.3"
   }
 }
